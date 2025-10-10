@@ -16,7 +16,7 @@ public class Program
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
 
-        //Important - User has to create its own database manually in postgres
+        //Important - User has to create its own database manually in postgres. Marten doesn't not support auto creation of database if not exists
         builder
             .Services.AddMarten(opts =>
             {
