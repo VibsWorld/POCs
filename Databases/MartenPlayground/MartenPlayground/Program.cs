@@ -4,7 +4,7 @@ using MartenPlayground.Users.Domain;
 
 namespace MartenPlayground;
 
-public class Program
+public partial class Program
 {
     public static void Main(string[] args)
     {
@@ -24,9 +24,23 @@ public class Program
                 opts.Connection(builder.Configuration.GetConnectionString("Database")!);
                 opts.AutoCreateSchemaObjects = AutoCreate.All;
 
+                //Create Database if not exists
+                opts.CreateDatabasesForTenants(c =>
+                {
+                    c.MaintenanceDatabase(
+                        builder.Configuration.GetConnectionString("DatabaseMigrator")
+                    );
+
+                    c.ForTenant()
+                        .CheckAgainstPgDatabase()
+                        .WithOwner("postgres")
+                        .WithEncoding("UTF8");
+                });
+
                 //Sample Indexing for JSONB Email
                 opts.Schema.For<User>().Duplicate(x => x.Email);
             })
+            .ApplyAllDatabaseChangesOnStartup()
             .UseLightweightSessions();
 
         var app = builder.Build();
@@ -47,3 +61,5 @@ public class Program
         app.Run();
     }
 }
+
+public partial class Program { }

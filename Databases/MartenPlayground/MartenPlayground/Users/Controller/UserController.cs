@@ -47,7 +47,7 @@ public class UserController : ControllerBase
         this.sessionQuery = sessionQuery;
     }
 
-    [HttpPost(Name = "Create")]
+    [HttpPost("Create")]
     public async Task<CreateOrUpdateUserResponse> Create(CreateUserRequest request)
     {
         logger.LogInformation("Create User Request Received - {log}", request);
