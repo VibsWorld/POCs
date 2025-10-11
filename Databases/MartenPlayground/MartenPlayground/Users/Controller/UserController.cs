@@ -205,5 +205,9 @@ public class UserController : ControllerBase
 
         return new UserFoundResponse(user);
     }
+
+    [HttpGet("/Users")]
+    public async Task<IReadOnlyList<User>> GetAllUsers() =>
+        await session.Query<User>().ToListAsync();
     #endregion
 }
