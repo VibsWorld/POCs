@@ -10,7 +10,13 @@ public abstract record CreateUserResponse();
 
 public record SuccessUserResponse(Guid Id) : CreateUserResponse;
 
-public record FailureUserResponse(string failtureMessage) : CreateUserResponse;
+public record FailureUserResponse(string FailtureMessage) : CreateUserResponse;
+
+public abstract record UserResponse;
+
+public record NotFoundResponse(string NotFoundMessage) : UserResponse;
+
+public record UserFoundResponse(User User) : UserResponse;
 
 [ApiController]
 [Route("[controller]")]
@@ -18,11 +24,17 @@ public class UserController : ControllerBase
 {
     private readonly ILogger<UserController> logger;
     private readonly IDocumentSession session;
+    private readonly IQuerySession sessionQuery;
 
-    public UserController(ILogger<UserController> logger, IDocumentSession session)
+    public UserController(
+        ILogger<UserController> logger,
+        IDocumentSession session,
+        IQuerySession sessionQuery
+    )
     {
         this.logger = logger;
         this.session = session;
+        this.sessionQuery = sessionQuery;
     }
 
     [HttpPost(Name = "Create")]
@@ -56,5 +68,22 @@ public class UserController : ControllerBase
 
         logger.LogInformation("{log}", request);
         return new SuccessUserResponse(user.Id);
+    }
+
+    [HttpGet("GetUserById/{Id:guid}")]
+    public async Task<User> Get(Guid Id) => await sessionQuery.LoadAsync<User>(Id);
+
+    [HttpGet("GetUserFromEmail/{Email}")]
+    public async Task<UserResponse> GetUserFromEmail(string Email)
+    {
+        var user = await sessionQuery
+            .Query<User>()
+            .Where(x => x.Email.Equals(Email, StringComparison.OrdinalIgnoreCase))
+            .ToListAsync();
+
+        if (user.Count == 0)
+            return new NotFoundResponse($"No user found with email '{Email}'");
+
+        return new UserFoundResponse(user[0]);
     }
 }

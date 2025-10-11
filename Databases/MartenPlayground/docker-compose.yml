@@ -1,9 +1,9 @@
 services:
-  martenplayground:
-    image: ${DOCKER_REGISTRY-}martenplayground
-    build:
-      context: .
-      dockerfile: MartenPlayground/Dockerfile
+  # martenplayground:
+  #   image: ${DOCKER_REGISTRY-}martenplayground
+  #   build:
+  #     context: .
+  #     dockerfile: MartenPlayground/Dockerfile
   postgres:
     image: postgres
     environment:
