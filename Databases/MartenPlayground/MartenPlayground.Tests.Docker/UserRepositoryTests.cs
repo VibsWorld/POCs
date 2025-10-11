@@ -13,8 +13,6 @@ public class UserRepositoryTests
     : IClassFixture<WebApplicationFactory<Program>>,
         IClassFixture<DatabaseFixture>
 {
-    private readonly DatabaseFixture _databaseFixture;
-
     private readonly WebApplicationFactory<Program> _factory;
     private readonly Fixture fixture = new();
     private PostgreSqlContainer? postgreSqlContainer;
@@ -29,8 +27,6 @@ public class UserRepositoryTests
     )
     {
         _factory = factory;
-        _databaseFixture = databaseFixture;
-        var port = _databaseFixture.Port();
     }
 
     /// <summary>
@@ -166,9 +162,6 @@ public class UserRepositoryTests
         Assert.NotNull(updatedUser);
         Assert.Equal(updatedUser.Name, nameToBeupdated);
     }
-
-    private User GenerateAValidUserForUpdateWithoutId() =>
-        fixture.Build<User>().With(x => x.Email, GenerateValidEmail()).Create();
 
     private User GenerateAValidUserForInsert() =>
         fixture.Build<User>().Without(x => x.Id).With(x => x.Email, GenerateValidEmail()).Create();
