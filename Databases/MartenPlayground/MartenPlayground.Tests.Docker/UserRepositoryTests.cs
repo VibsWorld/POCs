@@ -63,8 +63,11 @@ public class UserRepositoryTests
                 user.Phone,
                 user.Email,
                 user.Address,
-                user.City,
-                user.Country
+                user.Address.City,
+                user.Address.Country,
+                user.Address.State,
+                user.Roles,
+                user.TotalWalletBalance
             )
         );
         var result = await response.Content.ReadAsStringAsync();
@@ -94,8 +97,11 @@ public class UserRepositoryTests
                 user.Phone,
                 user.Email,
                 user.Address,
-                user.City,
-                user.Country
+                user.Address.City,
+                user.Address.Country,
+                user.Address.State,
+                user.Roles,
+                user.TotalWalletBalance
             )
         );
         var userCreated = JsonSerializer.Deserialize<UserCreatedSuccessfully>(
@@ -131,8 +137,11 @@ public class UserRepositoryTests
                 user.Phone,
                 user.Email,
                 user.Address,
-                user.City,
-                user.Country
+                user.Address.City,
+                user.Address.Country,
+                user.Address.State,
+                user.Roles,
+                user.TotalWalletBalance
             )
         );
         var userCreated = JsonSerializer.Deserialize<UserCreatedSuccessfully>(
