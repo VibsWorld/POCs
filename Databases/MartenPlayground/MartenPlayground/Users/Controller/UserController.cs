@@ -1,5 +1,7 @@
 ﻿using Marten;
+using Marten.Linq.SoftDeletes;
 using MartenPlayground.Users.Domain;
+using MartenPlayground.Users.Events;
 using Microsoft.AspNetCore.Mvc;
 
 namespace MartenPlayground.Users.Controller;
@@ -75,6 +77,11 @@ public class UserController : ControllerBase
         session.Store(user);
         await session.SaveChangesAsync();
 
+        //Event
+        var userCreatedEvent = new UserCreated(user.Id, user.Name, user.Email, DateTime.Now);
+        session.Events.StartStream<User>(user.Id, userCreatedEvent);
+        await session.SaveChangesAsync();
+
         logger.LogInformation("User {log} saved successfully", request);
         return new UserCreatedSuccessfully(user.Id);
     }
@@ -87,12 +94,25 @@ public class UserController : ControllerBase
     {
         var user = await sessionQuery
             .Query<User>()
-            .Where(x => x.Email.Equals(Email, StringComparison.OrdinalIgnoreCase))
-            .ToListAsync();
+            .FirstOrDefaultAsync((x => x.Email.Equals(Email, StringComparison.OrdinalIgnoreCase)));
 
-        if (user.Count == 0)
+        if (user is null || user.Id == default)
             return new NotFoundResponse($"No user found with email '{Email}'");
 
-        return new UserFoundResponse(user[0]);
+        //Add Event - UserQueriedByEmail
+        var userQueriedByEmailEvent = new UserQueriedByEmail(Email, DateTime.Now);
+        session.Events.Append(user.Id, userQueriedByEmailEvent);
+        await session.SaveChangesAsync();
+
+        return new UserFoundResponse(user);
+    }
+
+    [HttpDelete]
+    public Task<bool> DeleteUserById(Guid Id)
+    {
+        session.Delete<User>(Id);
+        //To Delete with WHERE clause basis of any sub property use DeleteWhere as shown below
+        //session.DeleteWhere<User>(user => user.Id == Id);
+        return Task.FromResult(true);
     }
 }
