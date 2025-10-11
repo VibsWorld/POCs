@@ -1,5 +1,6 @@
 using JasperFx;
 using Marten;
+using MartenPlayground.Users.Domain;
 
 namespace MartenPlayground;
 
@@ -22,6 +23,9 @@ public class Program
             {
                 opts.Connection(builder.Configuration.GetConnectionString("Database")!);
                 opts.AutoCreateSchemaObjects = AutoCreate.All;
+
+                //Sample Indexing for JSONB Email
+                opts.Schema.For<User>().Duplicate(x => x.Email);
             })
             .UseLightweightSessions();
 
