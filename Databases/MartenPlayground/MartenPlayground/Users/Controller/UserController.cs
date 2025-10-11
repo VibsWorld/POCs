@@ -1,5 +1,4 @@
 ﻿using Marten;
-using Marten.Linq.SoftDeletes;
 using MartenPlayground.Users.Domain;
 using MartenPlayground.Users.Events;
 using Microsoft.AspNetCore.Mvc;
@@ -15,11 +14,13 @@ public record CreateUserRequest(
     string Country
 );
 
-public abstract record CreateUserResponse();
+public abstract record CreateOrUpdateUserResponse();
 
-public record UserCreatedSuccessfully(Guid Id) : CreateUserResponse;
+public record UserCreatedSuccessfully(Guid Id) : CreateOrUpdateUserResponse;
 
-public record UnableToCreateUser(string FailtureMessage) : CreateUserResponse;
+public record UserUpdatedSuccessfully(Guid Id) : CreateOrUpdateUserResponse;
+
+public record UnableToCreateOrModifyUser(string FailtureMessage) : CreateOrUpdateUserResponse;
 
 public abstract record UserResponse;
 
@@ -47,7 +48,7 @@ public class UserController : ControllerBase
     }
 
     [HttpPost(Name = "Create")]
-    public async Task<CreateUserResponse> Create(CreateUserRequest request)
+    public async Task<CreateOrUpdateUserResponse> Create(CreateUserRequest request)
     {
         logger.LogInformation("Create User Request Received - {log}", request);
 
@@ -57,7 +58,7 @@ public class UserController : ControllerBase
                 .Where(x => x.Email.Equals(request.Email, StringComparison.OrdinalIgnoreCase))
                 .AnyAsync()
         )
-            return new UnableToCreateUser("User already exists");
+            return new UnableToCreateOrModifyUser("User already exists");
 
         var user = new User
         {
@@ -74,7 +75,7 @@ public class UserController : ControllerBase
             Phone = request.Phone,
         };
 
-        session.Store(user);
+        session.Insert(user);
         await session.SaveChangesAsync();
 
         //Event
@@ -84,6 +85,30 @@ public class UserController : ControllerBase
 
         logger.LogInformation("User {log} saved successfully", request);
         return new UserCreatedSuccessfully(user.Id);
+    }
+
+    [HttpPut("Update")]
+    public async Task<CreateOrUpdateUserResponse> UpdateUser(User user)
+    {
+        if (user?.Id == default)
+            return new UnableToCreateOrModifyUser("Invalid User Id");
+
+        try
+        {
+            session.Update(user);
+            await session.SaveChangesAsync();
+
+            //Add User Modified Event - UserUpdated
+            session.Events.Append(user.Id, new UserUpdated(user));
+            await session.SaveChangesAsync();
+
+            return new UserUpdatedSuccessfully(user.Id);
+        }
+        catch (Exception Ex)
+        {
+            logger.LogError(Ex, "Unable to modify user");
+            return new UnableToCreateOrModifyUser(Ex.Message);
+        }
     }
 
     [HttpGet("GetUserById/{Id:guid}")]
@@ -108,11 +133,16 @@ public class UserController : ControllerBase
     }
 
     [HttpDelete]
-    public Task<bool> DeleteUserById(Guid Id)
+    public async Task<bool> DeleteUserById(Guid Id)
     {
         session.Delete<User>(Id);
         //To Delete with WHERE clause basis of any sub property use DeleteWhere as shown below
         //session.DeleteWhere<User>(user => user.Id == Id);
-        return Task.FromResult(true);
+
+        //Add Event UserDeleted
+        var userDeletedEvent = new UserDeleted();
+        session.Events.Append(Id, userDeletedEvent);
+        await session.SaveChangesAsync();
+        return true;
     }
 }
