@@ -37,12 +37,12 @@ public record UserFoundResponse(User User) : UserResponse;
 [Route("[controller]")]
 public class UserController : ControllerBase
 {
-    private readonly ILogger<EventsController> logger;
+    private readonly ILogger<UserController> logger;
     private readonly IDocumentSession session;
     private readonly IQuerySession sessionQuery;
 
     public UserController(
-        ILogger<EventsController> logger,
+        ILogger<UserController> logger,
         IDocumentSession session,
         IQuerySession sessionQuery
     )
