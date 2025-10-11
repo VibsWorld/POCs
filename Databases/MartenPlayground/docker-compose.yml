@@ -1,0 +1,15 @@
+services:
+  # martenplayground:
+  #   image: ${DOCKER_REGISTRY-}martenplayground
+  #   build:
+  #     context: .
+  #     dockerfile: MartenPlayground/Dockerfile
+  postgres:
+    image: postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeit}
+      POSTGRES_DB: postgres
+      PGDATA: /data/postgres
+    ports:
+      - "5432:5432"
