@@ -4,13 +4,20 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace MartenPlayground.Users.Controller;
 
-public record CreateUserRequest(string Name, string MobileNumber, string Email);
+public record CreateUserRequest(
+    string Name,
+    string Phone,
+    string Email,
+    Address Address,
+    string City,
+    string Country
+);
 
 public abstract record CreateUserResponse();
 
-public record SuccessUserResponse(Guid Id) : CreateUserResponse;
+public record UserCreatedSuccessfully(Guid Id) : CreateUserResponse;
 
-public record FailureUserResponse(string FailtureMessage) : CreateUserResponse;
+public record UnableToCreateUser(string FailtureMessage) : CreateUserResponse;
 
 public abstract record UserResponse;
 
@@ -40,34 +47,36 @@ public class UserController : ControllerBase
     [HttpPost(Name = "Create")]
     public async Task<CreateUserResponse> Create(CreateUserRequest request)
     {
+        logger.LogInformation("Create User Request Received - {log}", request);
+
         if (
-            await session
+            await sessionQuery
                 .Query<User>()
                 .Where(x => x.Email.Equals(request.Email, StringComparison.OrdinalIgnoreCase))
                 .AnyAsync()
         )
-            return new FailureUserResponse("User already exists");
+            return new UnableToCreateUser("User already exists");
 
         var user = new User
         {
-            Email = "vaibhav@parcelhero.com",
-            City = "New Delhi",
-            Name = "Vaibhav",
-            Country = "India",
+            Email = request.Email,
+            City = request.City,
+            Name = request.Name,
+            Country = request.Country,
             Address = new Address
             {
-                AddressLine1 = "Addr Line 1",
-                AddressLine2 = "test",
-                Zip = "Sample Zip",
+                AddressLine1 = request.Address.AddressLine1,
+                AddressLine2 = request.Address.AddressLine2,
+                Zip = request.Address.Zip,
             },
-            Phone = "123456",
+            Phone = request.Phone,
         };
 
         session.Store(user);
         await session.SaveChangesAsync();
 
-        logger.LogInformation("{log}", request);
-        return new SuccessUserResponse(user.Id);
+        logger.LogInformation("User {log} saved successfully", request);
+        return new UserCreatedSuccessfully(user.Id);
     }
 
     [HttpGet("GetUserById/{Id:guid}")]
