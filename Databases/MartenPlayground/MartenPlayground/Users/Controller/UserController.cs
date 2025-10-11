@@ -1,4 +1,5 @@
-﻿using Marten;
+﻿using System.Diagnostics.Tracing;
+using Marten;
 using MartenPlayground.Users.Domain;
 using MartenPlayground.Users.Events;
 using Microsoft.AspNetCore.Mvc;
@@ -145,4 +146,25 @@ public class UserController : ControllerBase
         await session.SaveChangesAsync();
         return true;
     }
+
+    #region Events
+    [HttpGet("FetchStream/{Id:guid}")]
+    public async Task<IActionResult> GetStream(Guid Id)
+    {
+        var stream = await session.Events.FetchStreamAsync(Id);
+        Queue<object> que = new();
+        foreach (var evt in stream)
+        {
+            que.Enqueue(
+                new
+                {
+                    evt.EventTypeName,
+                    evt.DotNetTypeName,
+                    evt.Data,
+                }
+            );
+        }
+        return Ok(que);
+    }
+    #endregion
 }
