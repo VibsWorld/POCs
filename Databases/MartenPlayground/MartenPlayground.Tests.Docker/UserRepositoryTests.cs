@@ -4,14 +4,17 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using System.Threading.Tasks;
 using AutoFixture;
-using Marten.Linq.CreatedAt;
 using MartenPlayground.Users.Controller;
 using MartenPlayground.Users.Domain;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Testcontainers.PostgreSql;
 
-public class UserRepositoryTests : IClassFixture<WebApplicationFactory<Program>>, IAsyncLifetime
+public class UserRepositoryTests
+    : IClassFixture<WebApplicationFactory<Program>>,
+        IClassFixture<DatabaseFixture>
 {
+    private readonly DatabaseFixture _databaseFixture;
+
     private readonly WebApplicationFactory<Program> _factory;
     private readonly Fixture fixture = new();
     private PostgreSqlContainer? postgreSqlContainer;
@@ -20,24 +23,20 @@ public class UserRepositoryTests : IClassFixture<WebApplicationFactory<Program>>
         PropertyNameCaseInsensitive = true,
     };
 
-    public UserRepositoryTests(WebApplicationFactory<Program> factory)
+    public UserRepositoryTests(
+        DatabaseFixture databaseFixture,
+        WebApplicationFactory<Program> factory
+    )
     {
         _factory = factory;
+        _databaseFixture = databaseFixture;
+        var port = _databaseFixture.Port();
     }
 
     /// <summary>
     /// Ensure that Postgres PORT 5432 is NOT IN USE before running these integrated tests as appconfig uses localhost:5432 by default
     /// </summary>
     /// <returns></returns>
-    public async Task InitializeAsync()
-    {
-        postgreSqlContainer = new PostgreSqlBuilder()
-            .WithPassword("changeit")
-            .WithPortBinding(PostgreSqlBuilder.PostgreSqlPort, false)
-            .Build();
-        await postgreSqlContainer.StartAsync();
-    }
-
     [Fact]
     public async Task GetUserFromEmail_WhenProvidedNotInsertedEmail_ReturnsNotFoundMessage()
     {
@@ -167,8 +166,6 @@ public class UserRepositoryTests : IClassFixture<WebApplicationFactory<Program>>
         Assert.NotNull(updatedUser);
         Assert.Equal(updatedUser.Name, nameToBeupdated);
     }
-
-    public async Task DisposeAsync() => await postgreSqlContainer!.DisposeAsync().AsTask();
 
     private User GenerateAValidUserForUpdateWithoutId() =>
         fixture.Build<User>().With(x => x.Email, GenerateValidEmail()).Create();
