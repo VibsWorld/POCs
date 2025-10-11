@@ -1,4 +1,6 @@
-﻿using Marten;
+﻿using System.ComponentModel.DataAnnotations;
+using Marten;
+using Marten.Patching;
 using MartenPlayground.Users.Domain;
 using MartenPlayground.Users.Events;
 using Microsoft.AspNetCore.Mvc;
@@ -6,12 +8,15 @@ using Microsoft.AspNetCore.Mvc;
 namespace MartenPlayground.Users.Controller;
 
 public record CreateUserRequest(
-    string Name,
+    [Required] string Name,
     string Phone,
-    string Email,
+    [Required] string Email,
     Address Address,
     string City,
-    string Country
+    string Country,
+    string State,
+    string[] Roles,
+    decimal DefaultWalletBalance
 );
 
 public abstract record CreateOrUpdateUserResponse();
@@ -32,12 +37,12 @@ public record UserFoundResponse(User User) : UserResponse;
 [Route("[controller]")]
 public class UserController : ControllerBase
 {
-    private readonly ILogger<UserController> logger;
+    private readonly ILogger<EventsController> logger;
     private readonly IDocumentSession session;
     private readonly IQuerySession sessionQuery;
 
     public UserController(
-        ILogger<UserController> logger,
+        ILogger<EventsController> logger,
         IDocumentSession session,
         IQuerySession sessionQuery
     )
@@ -47,6 +52,7 @@ public class UserController : ControllerBase
         this.sessionQuery = sessionQuery;
     }
 
+    #region CRUD Operations
     [HttpPost("Create")]
     public async Task<CreateOrUpdateUserResponse> Create(CreateUserRequest request)
     {
@@ -63,24 +69,39 @@ public class UserController : ControllerBase
         var user = new User
         {
             Email = request.Email,
-            City = request.City,
             Name = request.Name,
-            Country = request.Country,
             Address = new Address
             {
-                AddressLine1 = request.Address.AddressLine1,
-                AddressLine2 = request.Address.AddressLine2,
-                Zip = request.Address.Zip,
+                AddressLine1 = request.Address?.AddressLine1,
+                AddressLine2 = request.Address?.AddressLine2,
+                ZipCode = request.Address?.ZipCode,
+                City = request.City,
+                Country = request.Country,
+                State = request.State,
             },
             Phone = request.Phone,
+            Roles = request.Roles,
         };
 
         session.Insert(user);
         await session.SaveChangesAsync();
 
-        //Event
+        //Events
         var userCreatedEvent = new UserCreated(user.Id, user.Name, user.Email, DateTime.Now);
         session.Events.StartStream<User>(user.Id, userCreatedEvent);
+
+        if (!string.IsNullOrWhiteSpace(request.Address?.AddressLine1))
+            session.Events.Append(user.Id, new UserAddressDetailsModified(request.Address));
+
+        if (request.Roles?.Length > 0)
+            session.Events.Append(user.Id, new UserRolesAdded(request.Roles));
+
+        if (request.DefaultWalletBalance != default)
+            session.Events.Append(
+                user.Id,
+                new UserWalletBalanceAdjusted(request.DefaultWalletBalance)
+            );
+
         await session.SaveChangesAsync();
 
         logger.LogInformation("User {log} saved successfully", request);
@@ -111,6 +132,59 @@ public class UserController : ControllerBase
         }
     }
 
+    [HttpPut("UpdateAddressDetails/{Id:guid}")]
+    public async Task<IActionResult> UpdateUserAddressDetails(
+        [FromRoute] Guid Id,
+        [FromBody] [Required] Address address
+    )
+    {
+        session.Patch<User>(Id).Set(x => x.Address, address);
+        session.Events.Append(Id, new UserAddressDetailsModified(address));
+        await session.SaveChangesAsync();
+        return Ok();
+    }
+
+    [HttpPut("UpdateWalletBalance/{Id:guid}/{Amount:decimal}")]
+    public async Task<IActionResult> UpdateUserAddressDetails(
+        [FromRoute] Guid Id,
+        [FromRoute] decimal Amount
+    )
+    {
+        var user = await sessionQuery.LoadAsync<User>(Id);
+        session.Patch<User>(Id).Set(x => x.TotalWalletBalance, user.TotalWalletBalance + Amount);
+        session.Events.Append(Id, new UserWalletBalanceAdjusted(Amount));
+        await session.SaveChangesAsync();
+        return Ok();
+    }
+
+    [HttpPut("UpdateRoles/{Id:guid}")]
+    public async Task<IActionResult> UpdateRoles(
+        [FromRoute] Guid Id,
+        [FromBody] [Required] string[] Roles
+    )
+    {
+        session.Patch<User>(Id).Set(x => x.Roles, Roles);
+        session.Events.Append(Id, new UserRolesAdded(Roles));
+        await session.SaveChangesAsync();
+        return Ok();
+    }
+
+    [HttpDelete]
+    public async Task<bool> DeleteUserById(Guid Id)
+    {
+        session.Delete<User>(Id);
+        //To Delete with WHERE clause basis of any sub property use DeleteWhere as shown below
+        //session.DeleteWhere<User>(user => user.Id == Id);
+
+        //Add Event UserDeleted
+        var userDeletedEvent = new UserDeleted();
+        session.Events.Append(Id, userDeletedEvent);
+        await session.SaveChangesAsync();
+        return true;
+    }
+    #endregion
+
+    #region Queries
     [HttpGet("GetUserById/{Id:guid}")]
     public async Task<User> Get(Guid Id) => await sessionQuery.LoadAsync<User>(Id);
 
@@ -131,18 +205,5 @@ public class UserController : ControllerBase
 
         return new UserFoundResponse(user);
     }
-
-    [HttpDelete]
-    public async Task<bool> DeleteUserById(Guid Id)
-    {
-        session.Delete<User>(Id);
-        //To Delete with WHERE clause basis of any sub property use DeleteWhere as shown below
-        //session.DeleteWhere<User>(user => user.Id == Id);
-
-        //Add Event UserDeleted
-        var userDeletedEvent = new UserDeleted();
-        session.Events.Append(Id, userDeletedEvent);
-        await session.SaveChangesAsync();
-        return true;
-    }
+    #endregion
 }
