@@ -12,9 +12,6 @@ public record CreateUserRequest(
     string Phone,
     [Required] string Email,
     Address Address,
-    string City,
-    string Country,
-    string State,
     string[] Roles,
     decimal DefaultWalletBalance
 );
@@ -75,12 +72,13 @@ public class UserController : ControllerBase
                 AddressLine1 = request.Address?.AddressLine1,
                 AddressLine2 = request.Address?.AddressLine2,
                 ZipCode = request.Address?.ZipCode,
-                City = request.City,
-                Country = request.Country,
-                State = request.State,
+                City = request.Address?.City,
+                Country = request.Address?.Country,
+                State = request.Address?.State,
             },
             Phone = request.Phone,
             Roles = request.Roles,
+            TotalWalletBalance = request.DefaultWalletBalance,
         };
 
         session.Insert(user);
@@ -152,6 +150,7 @@ public class UserController : ControllerBase
     {
         var user = await sessionQuery.LoadAsync<User>(Id);
         session.Patch<User>(Id).Set(x => x.TotalWalletBalance, user.TotalWalletBalance + Amount);
+        await session.SaveChangesAsync();
         session.Events.Append(Id, new UserWalletBalanceAdjusted(Amount));
         await session.SaveChangesAsync();
         return Ok();
