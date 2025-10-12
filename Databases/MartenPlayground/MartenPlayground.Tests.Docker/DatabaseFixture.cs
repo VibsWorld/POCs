@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Testcontainers.PostgreSql;
+﻿using Testcontainers.PostgreSql;
 
 namespace MartenPlayground.Tests.Docker;
 
@@ -11,10 +6,8 @@ public class DatabaseFixture : IAsyncLifetime
 {
     private readonly PostgreSqlContainer? postgreSqlContainer;
 
-    public ushort Port()
-    {
-        return postgreSqlContainer!.GetMappedPublicPort(PostgreSqlBuilder.PostgreSqlPort);
-    }
+    public ushort Port() =>
+        postgreSqlContainer!.GetMappedPublicPort(PostgreSqlBuilder.PostgreSqlPort);
 
     public DatabaseFixture() =>
         postgreSqlContainer = new PostgreSqlBuilder()

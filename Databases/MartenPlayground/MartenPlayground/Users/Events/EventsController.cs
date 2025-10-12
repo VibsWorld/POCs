@@ -1,8 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-using Marten;
-using Marten.Patching;
-using MartenPlayground.Users.Controller;
-using MartenPlayground.Users.Domain;
+﻿using Marten;
 using Microsoft.AspNetCore.Mvc;
 
 namespace MartenPlayground.Users.Events;
@@ -45,5 +41,9 @@ public class EventsController : ControllerBase
         }
         return Ok(que);
     }
+
+    [HttpGet("GetUserDashboardViewProjection/{Id:guid}")]
+    public async Task<IActionResult> GetUserDashboardStatus(Guid Id) =>
+        Ok(await session.LoadAsync<UserDashboardStats>(Id));
     #endregion
 }

@@ -40,7 +40,7 @@ public class UserRepositoryTests
         var client = _factory.CreateClient();
 
         //Act
-        var response = await client.GetAsync("/User/GetUserFromEmail/" + "test@test.com");
+        var response = await client.GetAsync("/User/GetUserFromEmail/" + GenerateValidEmail());
         var responseContent = await response.Content.ReadAsStringAsync();
 
         //Assert
@@ -63,9 +63,6 @@ public class UserRepositoryTests
                 user.Phone,
                 user.Email,
                 user.Address,
-                user.Address.City,
-                user.Address.Country,
-                user.Address.State,
                 user.Roles,
                 user.TotalWalletBalance
             )
@@ -97,9 +94,6 @@ public class UserRepositoryTests
                 user.Phone,
                 user.Email,
                 user.Address,
-                user.Address.City,
-                user.Address.Country,
-                user.Address.State,
                 user.Roles,
                 user.TotalWalletBalance
             )
@@ -137,9 +131,6 @@ public class UserRepositoryTests
                 user.Phone,
                 user.Email,
                 user.Address,
-                user.Address.City,
-                user.Address.Country,
-                user.Address.State,
                 user.Roles,
                 user.TotalWalletBalance
             )

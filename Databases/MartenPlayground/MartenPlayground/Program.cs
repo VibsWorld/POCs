@@ -1,6 +1,7 @@
 using JasperFx;
 using Marten;
 using MartenPlayground.Users.Domain;
+using MartenPlayground.Users.Events;
 
 namespace MartenPlayground;
 
@@ -39,6 +40,11 @@ public partial class Program
 
                 //Sample Indexing for JSONB Email
                 opts.Schema.For<User>().Duplicate(x => x.Email);
+
+                //View Projections - https://martendb.io/events/projections/
+                opts.Projections.Add<UserDashboardViewProjection>(
+                    JasperFx.Events.Projections.ProjectionLifecycle.Inline
+                );
             })
             .ApplyAllDatabaseChangesOnStartup()
             .UseLightweightSessions();
@@ -46,11 +52,11 @@ public partial class Program
         var app = builder.Build();
 
         // Configure the HTTP request pipeline.
-        if (app.Environment.IsDevelopment())
-        {
-            app.UseSwagger();
-            app.UseSwaggerUI();
-        }
+        //if (app.Environment.IsDevelopment())
+        //{
+        app.UseSwagger();
+        app.UseSwaggerUI();
+        //}
 
         app.UseHttpsRedirection();
 
