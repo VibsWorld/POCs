@@ -25,18 +25,8 @@ public partial class Program
                 opts.Connection(builder.Configuration.GetConnectionString("Database")!);
                 opts.AutoCreateSchemaObjects = AutoCreate.All;
 
-                //Create Database if not exists
-                opts.CreateDatabasesForTenants(c =>
-                {
-                    c.MaintenanceDatabase(
-                        builder.Configuration.GetConnectionString("DatabaseMigrator")
-                    );
-
-                    c.ForTenant()
-                        .CheckAgainstPgDatabase()
-                        .WithOwner("postgres")
-                        .WithEncoding("UTF8");
-                });
+                //Create Database if not exists - Not to be used in Production generally
+                MartenCreateDatabaseIfNotExists(opts, builder);
 
                 //Sample Indexing for JSONB Email
                 opts.Schema.For<User>().Duplicate(x => x.Email);
@@ -66,6 +56,20 @@ public partial class Program
 
         app.Run();
     }
+
+    private static void MartenCreateDatabaseIfNotExists(
+        StoreOptions opts,
+        WebApplicationBuilder builder
+    )
+    {
+        opts.CreateDatabasesForTenants(c =>
+        {
+            c.MaintenanceDatabase(builder.Configuration.GetConnectionString("DatabaseMigrator"));
+
+            c.ForTenant().CheckAgainstPgDatabase().WithOwner("postgres").WithEncoding("UTF8");
+        });
+    }
 }
 
+//This class is intentionally left blank to ensure that WebApplicationFactory<Program> works like an Internal class in Integration tests (MartenPlaygorund.Tests.Docker)
 public partial class Program { }
