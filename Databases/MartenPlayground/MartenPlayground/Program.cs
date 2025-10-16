@@ -1,4 +1,5 @@
 using JasperFx;
+using JasperFx.Events.Projections;
 using Marten;
 using MartenPlayground.Users.Domain;
 using MartenPlayground.Users.Events;
@@ -32,9 +33,7 @@ public partial class Program
                 opts.Schema.For<User>().Duplicate(x => x.Email);
 
                 //View Projections - https://martendb.io/events/projections/
-                opts.Projections.Add<UserDashboardViewProjection>(
-                    JasperFx.Events.Projections.ProjectionLifecycle.Inline
-                );
+                opts.Projections.Add<UserDashboardViewProjection>(ProjectionLifecycle.Inline);
             })
             .ApplyAllDatabaseChangesOnStartup()
             .UseLightweightSessions();
