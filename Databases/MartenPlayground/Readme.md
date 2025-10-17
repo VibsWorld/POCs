@@ -2,7 +2,7 @@
 
 ⬅️ Please navigate document tabs on the LEFT or click links below ⬅️
 
-1. [Marten Vs Other ORMs](MartenPlayground#marten-vs-other-orms)  
+1. [Marten Vs Other ORMs](Readme.md#marten-vs-other-orms)  
 2. [Optimizing JSONB GET operations](?tab=t.kdyz6836gnhs)  
 3. [Where NOT to use Marten](?tab=t.kr7nyp6b8eu3)  
 4. [Marten Vs Eventstore](?tab=t.tyqynef560lc)   
