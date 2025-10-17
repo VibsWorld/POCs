@@ -33,9 +33,9 @@ steps:
     projects: '**/*Tests.Docker.csproj'
     arguments: '--configuration $(buildConfiguration) --no-build --verbosity normal'
 
- - task: PublishTestResults@2
-   displayName: 'Publish Test Results'
-   inputs:
-     testResultsFormat: 'VSTest'
-     testResultsFiles: '$(Agent.TempDirectory)/TestResults/**/*.trx'
-     failTaskOnFailedTests: true
+- task: PublishTestResults@2
+  displayName: 'Publish Test Results'
+  inputs:
+    testResultsFormat: 'VSTest'
+    testResultsFiles: '$(Agent.TempDirectory)/TestResults/**/*.trx'
+    failTaskOnFailedTests: true
