@@ -21,16 +21,15 @@ Sample Repository for POC
 
 A wonderful way to get start via Freight Shipping Service \- [https://martendb.io/tutorials/getting-started.html](https://martendb.io/tutorials/getting-started.html) 
 
+---
 ### Marten Vs Other ORMs
 When saving data in a .NET application using PostgreSQL, `Marten` offers several significant advantages over `Dapper` by providing a higher level of abstraction and **embracing a document database approach** which relates more closely with `Domain Driven Design`. 
 
 While Dapper excels at high-performance querying and giving developers **direct SQL control**, Marten simplifies the act of data persistence, reducing boilerplate code and development overhead.
 
-**Main Advantages over Dapper** *(Not discussing here ENTITY Framework pros/cons intentionally business has already decided to use Dapper over EF for now)*
+**Main Advantages over Dapper** *(Not discussing here ENTITY Framework pros/cons intentionally as I have already decided to use Dapper over EF for now)*
 
----
 #### Unit of Work and Automatic Change Tracking
-
 Marten's `IDocumentSession` implements the `Unit of Work` pattern, which is one of its most powerful features for data persistence. It automatically tracks changes to your C\# objects, figures out what needs to be inserted or updated, and batches all operations into a single transaction when you call `SaveChangesAsync()`  
 **Ref:** [https://www.codemag.com/Article/2205051/Fast-Application-Persistence-with-Marten](https://www.codemag.com/Article/2205051/Fast-Application-Persistence-with-Marten)   
 With Marten:  
@@ -53,7 +52,6 @@ user.Shipment.Status = "Pickup Up";
 session.store(user);
 await session.SaveCHangesAsync();
 ```
-
 Marten uses PostgreSQL's `INSERT ... ON CONFLICT DO UPDATE` under the hood to perform upsert i.e if you provide user**.**Id then its an `Update` else an `Insert`. 
 
 We use a session (`LightweightSession`) to interact with the database. *This pattern is similar to an EF Core DbContext or a NHibernate session*. The session is a unit of work; we save changes at the end (which wraps everything in a DB transaction).Calling `Store`(user) tells Marten to stage that document for saving. `SaveChangesAsync()` actually **commits** it to PostgreSQL.
