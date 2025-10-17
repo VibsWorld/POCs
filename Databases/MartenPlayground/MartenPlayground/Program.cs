@@ -19,14 +19,13 @@ public partial class Program
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
 
-        //Important - User has to create its own database manually in postgres. Marten doesn't not support auto creation of database if not exists
         builder
             .Services.AddMarten(opts =>
             {
                 opts.Connection(builder.Configuration.GetConnectionString("Database")!);
                 opts.AutoCreateSchemaObjects = AutoCreate.All;
 
-                //Create Database if not exists - Not to be used in Production generally
+                //Create Database if not exists - Not to be used in Production as standard practice. 
                 MartenCreateDatabaseIfNotExists(opts, builder);
 
                 //Sample Indexing for JSONB Email
@@ -64,7 +63,6 @@ public partial class Program
         opts.CreateDatabasesForTenants(c =>
         {
             c.MaintenanceDatabase(builder.Configuration.GetConnectionString("DatabaseMigrator"));
-
             c.ForTenant().CheckAgainstPgDatabase().WithOwner("postgres").WithEncoding("UTF8");
         });
     }
