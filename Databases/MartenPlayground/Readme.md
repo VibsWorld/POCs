@@ -1,6 +1,4 @@
- Proposal \- Using **Marten ORM framework** to leverage benefits of [Postgres JSONB framework](https://www.postgresql.org/docs/current/datatype-json.html) to implement a unique flexibility of `No-SQL Document database` along with `RDBMS’s Transactional ACID compliance`.  
-
-⬅️ Please navigate document tabs on the LEFT or click links below ⬅️
+ Proposal - Using **Marten ORM framework** to leverage benefits of [Postgres JSONB framework](https://www.postgresql.org/docs/current/datatype-json.html) to implement a unique flexibility of `No-SQL Document database` along with `RDBMS’s Transactional ACID compliance`.
 
 * [Marten Vs Other ORMs](Readme.md#marten-vs-other-orms)
   * [Unit of Work and Automatic Change Tracking](Readme.md#unit-of-work-and-automatic-change-tracking)
@@ -12,14 +10,14 @@
 * [Optimizing JSONB GET operations](Readme.md#optimizing-jsonb-get-operations)
 * [Architecture Overview](Readme.md#architecture-overview)  
 
-Site link \- [https://martendb.io/](https://martendb.io/) 
+Site link - [https://martendb.io/](https://martendb.io/) 
 
-Nuget Package Info \- [`https://www.nuget.org/packages/Marten/`](https://www.nuget.org/packages/Marten/)
+Nuget Package Info - [https://www.nuget.org/packages/Marten/](https://www.nuget.org/packages/Marten/)
 
 Sample Repository for POC   
 [https://github.com/VibsWorld/POCs/tree/main/Databases/MartenPlayground](https://github.com/VibsWorld/POCs/tree/main/Databases/MartenPlayground) 
 
-A wonderful way to get start via Freight Shipping Service \- [https://martendb.io/tutorials/getting-started.html](https://martendb.io/tutorials/getting-started.html) 
+A wonderful way to get start via Freight Shipping Service (Tutorial) \- [https://martendb.io/tutorials/getting-started.html](https://martendb.io/tutorials/getting-started.html) 
 
 ---
 ### Marten Vs Other ORMs
