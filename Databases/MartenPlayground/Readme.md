@@ -3,6 +3,12 @@
 ⬅️ Please navigate document tabs on the LEFT or click links below ⬅️
 
 * [Marten Vs Other ORMs](Readme.md#marten-vs-other-orms)
+  * [Unit of Work and Automatic Change Tracking](Readme.md#unit-of-work-and-automatic-change-tracking)
+  * [Seamless Document-Based Persistence](Readme.md#seamless-document-based-persistence)
+  * [Automatic Schema Management and Evolution](Readme.md#automatic-schema-management-and-evolution)
+  * [Built-in Event Sourcing Engine](Readme.md#built-in-event-sourcing-engine)
+  * [Simplified "Upsert" and Bulk Insert Operations](Readme.md#simplified-upsert-and-bulk-insert-operations)
+  * [Tracking and Logging](Readme.md#tracking-and-logging)
 * [Optimizing JSONB GET operations](Readme.md#optimizing-jsonb-get-operations)
 * [Architecture Overview](Readme.md#architecture-overview)  
 
