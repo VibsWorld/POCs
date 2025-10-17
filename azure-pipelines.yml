@@ -37,12 +37,12 @@ steps:
     platform: '$(buildPlatform)'
     configuration: '$(buildConfiguration)'
 
-- task: DotNetCoreCLI@2 # Or Maven@3, Gradle@2, etc. depending on your project
-      displayName: 'Run Tests with Testcontainers'
-      inputs:
-        command: 'test'
-        projects: '**/*Tests.csproj' # Adjust for your project type
-        arguments: '--configuration $(buildConfiguration) --no-build --verbosity normal --collect "Code coverage" --results-directory $(Agent.TempDirectory)/TestResults'
+- task: DotNetCoreCLI@2
+  displayName: 'Run Integration Tests (with Testcontainers)'
+  inputs:
+    command: 'test'
+    projects: '**/*Tests.csproj'
+    arguments: '--configuration $(buildConfiguration) --no-build --verbosity normal --collect "Code coverage" --results-directory $(Agent.TempDirectory)/TestResults'
 
 - task: PublishTestResults@2
   displayName: 'Publish Test Results'
