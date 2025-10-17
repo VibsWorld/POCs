@@ -112,12 +112,15 @@ Ref: [https://jeremydmiller.com/2024/08/29/why-and-how-marten-is-a-great-documen
 **Advantage**: This dramatically speeds up development and simplifies migrations. With Dapper, schema management is entirely manual. You must write and maintain all the Data Definition Language (DDL) scripts (CREATE TABLE, ALTER TABLE, etc.) yourself.
 
 #### Built-in Event Sourcing Engine	
-
+Ref: <https://martendb.io/tutorials/event-sourced-aggregate.html>
 For applications designed with an Event Sourcing architecture, Marten is an unparalleled choice. It's not just a document database library; **it's also a full-featured event store**. Saving data means appending events to a stream, which Marten handles natively.
 
 With Marten:  
 Saving a series of events is a first-class operation.
-
+* A full audit trail of what happened and when
+* The ability to rebuild state at any point
+* Natural modeling of workflows and temporal logic
+* Easier integration with external systems through event publishing
 ```csharp
 var userRegistered = new UserRegistered(userId, "test@example.com");
 var userNameUpdated = new UserNameUpdated(userId, "Test User");
@@ -131,7 +134,6 @@ Advantage: With Dapper, you would have to build the entire event sourcing infras
 Ref: [https://falberthen.github.io/posts/ecommerceddd-pt4/](https://falberthen.github.io/posts/ecommerceddd-pt4/) 
 
 #### Simplified "Upsert" and Bulk Insert Operations
-
 Marten's `Store()` method conveniently handles both `INSERT` and `UPDATE` operations "**upsert**". It checks if a document with the given ID exists and performs the correct database command. Dapper requires you to write logic to differentiate between new and existing records.  
 Ref: [https://martendb.io/documents/storing\#upsert-with-store](https://martendb.io/documents/storing#upsert-with-store) 
 
