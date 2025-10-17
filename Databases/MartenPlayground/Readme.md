@@ -2,11 +2,9 @@
 
 ⬅️ Please navigate document tabs on the LEFT or click links below ⬅️
 
-1. [Marten Vs Other ORMs](Readme.md#marten-vs-other-orms)  
-2. [Optimizing JSONB GET operations](Readme.md#optimizing-jsonb-get-operations)  
-3. [Where NOT to use Marten](?tab=t.kr7nyp6b8eu3)  
-4. [Marten Vs Eventstore](?tab=t.tyqynef560lc)   
-5. [Event Source Aggregating](?tab=t.1ua32w8nyrvu) 
+* [Marten Vs Other ORMs](Readme.md#marten-vs-other-orms)
+* [Optimizing JSONB GET operations](Readme.md#optimizing-jsonb-get-operations)
+* [Architecture Overview](Readme.md#architecture-overview)  
 
 Site link \- [https://martendb.io/](https://martendb.io/) 
 
@@ -25,7 +23,6 @@ While Dapper excels at high-performance querying and giving developers **direct 
 **Main Advantages over Dapper** *(Not discussing here ENTITY Framework pros/cons intentionally business has already decided to use Dapper over EF for now)*
 
 ---
-
 #### Unit of Work and Automatic Change Tracking
 
 Marten's `IDocumentSession` implements the `Unit of Work` pattern, which is one of its most powerful features for data persistence. It automatically tracks changes to your C\# objects, figures out what needs to be inserted or updated, and batches all operations into a single transaction when you call `SaveChangesAsync()`  
@@ -43,9 +40,7 @@ user.Address = "New Address";
 session.Store(user); // Stages the user object for an update
 await session.SaveChangesAsync(); // A single transaction commits changes
 ```
-
 As `user` goes the registration process then we keep updating the field
-
 ```csharp
 user.status = "Active";
 user.Shipment.Status = "Pickup Up";
@@ -127,9 +122,7 @@ await session.SaveChangesAsync();
 ```
 Advantage: With Dapper, you would have to build the entire event sourcing infrastructure from the ground up—designing tables for event streams, managing concurrency, and handling event serialization. **This is a massive undertaking that Marten provides out of the box**.
 
-Ref: [https://falberthen.github.io/posts/ecommerceddd-pt4/](https://falberthen.github.io/posts/ecommerceddd-pt4/)  
-
----
+Ref: [https://falberthen.github.io/posts/ecommerceddd-pt4/](https://falberthen.github.io/posts/ecommerceddd-pt4/) 
 
 #### Simplified "Upsert" and Bulk Insert Operations
 
@@ -139,10 +132,7 @@ Ref: [https://martendb.io/documents/storing\#upsert-with-store](https://martendb
 Additionally, Marten provides a highly efficient `BulkInsert()` method that leverages `PostgreSQL's COPY command` for loading large amounts of data quickly, abstracting away the complexity of this operation.  
 Ref: [https://martendb.io/documents/storing\#bulk-loading](https://martendb.io/documents/storing#bulk-loading) 
 
----
-
-Tracking and Logging
-
+#### Tracking and Logging
 `Marten` utilizes `ISessionFactory` which we can override to create our own traces.   
 [https://martendb.io/diagnostics.html\#session-specific-logging](https://martendb.io/diagnostics.html#session-specific-logging) 
 
@@ -152,7 +142,6 @@ Telemetry Statics
 using var store = DocumentStore.For(opts =>
 {
     opts.Connection("some connection string");
-
     // Track Marten connection usage
     opts.OpenTelemetry.TrackConnections = TrackLevel.Normal;
 });
@@ -165,7 +154,6 @@ using var store = DocumentStore.For(opts =>
 If you registered Marten with `AddMarten()` under `ServiceCollection`, the `IDocumentSession` and `IQuerySession` services are registered with a **Scoped lifetime** by default. You should just inject a session directly in most cases. `IDocumentStore` is [registered](https://martendb.io/tutorials/getting-started.html#storing-and-retrieving-documents-with-marten) with Singleton scope, but you'll rarely need to interact with that service. 
 
 ---
-
 ### Optimizing JSONB GET operations
 Consider the following scenario in Postgres SQL
 ```sql
@@ -181,7 +169,6 @@ var openIssues = await session
     .OrderByDescending(x => x.Opened)
     .Take(10)
     .ToListAsync().ConfigureAwait(false);
-
 
 await using var querySession = store.QuerySession();
 
@@ -246,6 +233,7 @@ To create a B-tree index, we must index an expression that extracts the value as
 ```sql
 CREATE INDEX idx_btree_my_key ON my_table ((jsonb_column->>'key_name'));
 --- Example: Using the same users table, if you frequently search for users by their email address stored inside the profile JSON.
+
 -- Create a B-tree index on the 'email' value
 CREATE INDEX idx_btree_users_email ON users ((profile->>'email'));
 -This index is highly effective for queries like:
@@ -274,3 +262,24 @@ Here's a quick guide to help you decide:
   * You frequently filter, compare (`=`, `<`, `>`), or sort by the value of a **single, specific key**.  
   * You need fast equality checks on a particular field (like a user's email or a status flag).  
   * The indexed value has high cardinality (many distinct values).
+
+ ---
+ ### Architecture Overview
+<img width="665" height="451" alt="image" src="https://github.com/user-attachments/assets/a5759f59-abb6-48ae-8130-7eb7576e68f2" />
+
+* `IDocumentStore` is the root of the Marten usage but most of the Marten usage with `IQuerySession` (only read operations) and  `IDocumentSession` (includes both but mostly used for CRUD operations).`IQuerySession` and `IDocumentSession` are mostly injected using SCOPE lifetime where as `DocumentStore` uses Singleton but its not used often. 
+
+* **IDocumentSessions Implementations**
+
+  * **IdentityMapSession**   
+    * It cache documents loaded by ID. Mostly useful for web requests or service bus messages.   
+    * When many different objects / functions may need to access the same logical document.
+
+  * **LightWeightDocumentSession** (General Use Case)  
+    * It is suitable for small transactions with a mix of read and write operations for operations that involve updates, inserts or deletes.It is transaction but doesn’t track the changes to the loaded document
+
+  * **DirtyCheckingDocumentSession**  
+    * This is the dirty checking documentation. Session will try to detect the changes to any of the documents loaded by that session. Note by note comparison of json session od document using newtonsoft and system.text.json library.
+
+---
+
