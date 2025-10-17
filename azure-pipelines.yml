@@ -30,7 +30,7 @@ steps:
   displayName: 'Run Integration Tests (with Testcontainers)'
   inputs:
     command: 'test'
-    projects: '**/*Tests.csproj'
+    projects: '**/*Tests.Docker.csproj'
     arguments: '--configuration $(buildConfiguration) --no-build --verbosity normal --collect "Code coverage" --results-directory $(Agent.TempDirectory)/TestResults'
 
 - task: PublishTestResults@2
