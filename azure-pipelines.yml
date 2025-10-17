@@ -37,7 +37,7 @@ steps:
   inputs:
     command: 'test'
     projects: '**/*Tests.Docker.csproj'
-    arguments: '--configuration $(buildConfiguration) --no-build --verbosity "normal" --collect "Code coverage" --results-directory "$(Agent.TempDirectory)/TestResults"'
+    arguments: '--configuration $(buildConfiguration) --no-build --verbosity "normal" --results-directory "$(Agent.TempDirectory)/TestResults"'
 
 - task: PublishTestResults@2
   displayName: 'Publish Test Results'
