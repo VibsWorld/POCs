@@ -26,6 +26,9 @@ steps:
     projects: '**/*.csproj'
     arguments: '--configuration $(buildConfiguration)'
 
+- script: echo "Agent Temp Directory: $(Agent.TempDirectory)"
+      displayName: 'Show Agent Temp Directory'
+
 - task: DotNetCoreCLI@2
   displayName: 'Run Integration Tests (with Testcontainers)'
   inputs:
