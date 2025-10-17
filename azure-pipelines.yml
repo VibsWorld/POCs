@@ -7,7 +7,7 @@ trigger:
 - main
 
 pool:
-  vmImage: 'windows-latest'
+  vmImage: 'ubuntu-latest'
 
 variables:
   solution: '**/*.sln'
@@ -16,6 +16,10 @@ variables:
 
 steps:
 - task: NuGetToolInstaller@1
+- task: CmdLine@2
+  displayName: 'Verify Docker Installation'
+  inputs:
+    script: 'docker info'
 
 - task: NuGetCommand@2
   inputs:
@@ -32,3 +36,17 @@ steps:
   inputs:
     platform: '$(buildPlatform)'
     configuration: '$(buildConfiguration)'
+
+- task: DotNetCoreCLI@2 # Or Maven@3, Gradle@2, etc. depending on your project
+      displayName: 'Run Tests with Testcontainers'
+      inputs:
+        command: 'test'
+        projects: '**/*Tests.csproj' # Adjust for your project type
+        arguments: '--configuration $(buildConfiguration) --no-build --verbosity normal --collect "Code coverage" --results-directory $(Agent.TempDirectory)/TestResults'
+
+- task: PublishTestResults@2
+  displayName: 'Publish Test Results'
+  inputs:
+    testResultsFormat: 'VSTest'
+    testResultsFiles: '$(Agent.TempDirectory)/TestResults/**/*.trx'
+    failTaskOnFailedTests: true
