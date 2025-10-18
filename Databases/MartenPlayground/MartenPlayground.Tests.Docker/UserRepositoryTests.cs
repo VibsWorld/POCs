@@ -44,7 +44,7 @@ public class UserRepositoryTests
         var responseContent = await response.Content.ReadAsStringAsync();
 
         //Assert
-        Assert.NotNull(responseContent);
+        Assert.Null(responseContent);
         Assert.Contains("notFoundMessage", responseContent);
     }
 
