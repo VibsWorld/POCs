@@ -4,26 +4,52 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using DotNet.Testcontainers.Builders;
+using static DockerAsInfrastructure.Domain.DockerImage;
 
 namespace DockerAsInfrastructure.Domain;
 
 public interface IInfrastructure
 {
-    public ConcurrentDictionary<ushort, DockerInstance> DockerInstance { get; init; }
-
-    public Task AddDockerInstance(DockerInstance instance);
-    public Task RemoveDockerInstance(string containerId);
+    public ConcurrentDictionary<string, DockerInstance> DockerInstance { get; init; }
+    public Task Add(DockerInstance instance);
+    public Task Add(DockerImageType imageType, DockerInstance? instance = null);
+    public Task RemoveInstance(string id);
 }
 
-public class DockerInstance
+/// <summary>
+///
+/// </summary>
+/// <param name="Id"></param>
+/// <param name="Name"></param>
+/// <param name="Ports"></param>
+/// <param name="HttpPortMappingWithRelativeSourceMapping">
+/// Mapping of HTTP ports to their relative source paths for testing
+/// </param>
+/// <param name="Status"></param>
+/// <param name="EnvironmentVariables"></param>
+public record DockerInstance(
+    string Id,
+    string Name,
+    Dictionary<ushort, ushort> Ports,
+    Dictionary<ushort, string> HttpPortMappingWithRelativeSourceMapping,
+    DockerContainerStatus Status,
+    List<KeyValuePair<string, string>> EnvironmentVariables
+);
+
+public enum DockerContainerStatus
 {
-    public string ContainerId { get; init; } = string.Empty;
-    public string ContainerName { get; init; } = string.Empty;
-    public ushort ContainerHostPort { get; init; }
-    public Dictionary<ushort, ushort> Ports { get; set; } = [];
+    Undefined,
+    Created,
+    Running,
+    Paused,
+    Restarting,
+    Removing,
+    Exited,
+    Dead,
 }
 
-public static class DockerImageConfiguration
+public static class DockerImage
 {
     public const string Postgres = "postgres:latest";
     public const string Redis = "redis:latest";
@@ -36,6 +62,24 @@ public static class DockerImageConfiguration
     public const string RabbitMqManagement = "rabbitmq:4-management";
     public const string EventStore = "eventstore/eventstore:latest";
     public const string Unleash = "unleashorg/unleash:latest";
+    public const string Wiremock = "wiremock/wiremock:latest";
+
+    public enum DockerImageType
+    {
+        Postgres,
+        Redis,
+        RabbitMq,
+        MongoDb,
+        SqlServer,
+        Nginx,
+        Kafka,
+        Zookeeper,
+        RabbitMqManagement,
+        EventStore,
+        Unleash,
+        Wiremock,
+        Custom,
+    }
 }
 
 public static class DockerDefaultPorts
@@ -52,4 +96,34 @@ public static class DockerDefaultPorts
     public const ushort EventStoreTcp = 1113;
     public const ushort EventStoreHttp = 2113;
     public const ushort Unleash = 4242;
+
+    public static async Task Test()
+    {
+        var container = new ContainerBuilder()
+            // Set the image for the container to "testcontainers/helloworld:1.3.0".
+            .WithImage("testcontainers/helloworld:1.3.0")
+            // Bind port 8080 of the container to a random port on the host.
+            .WithPortBinding(8080, true)
+            // Wait until the HTTP endpoint of the container is available.
+            .WithWaitStrategy(
+                Wait.ForUnixContainer().UntilHttpRequestIsSucceeded(r => r.ForPort(8080))
+            )
+            // Build the container configuration.
+            .Build();
+
+        var sc = new DockerInstance(
+            "",
+            "",
+            new Dictionary<ushort, ushort>(),
+            [],
+            DockerContainerStatus.Undefined,
+            []
+        );
+
+        await container.StartAsync();
+
+        var state = container.State;
+
+        await Task.CompletedTask;
+    }
 }
