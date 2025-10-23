@@ -11,7 +11,7 @@ namespace DockerAsInfrastructure.Domain;
 
 public interface IInfrastructure
 {
-    public ConcurrentDictionary<string, DockerInstance> DockerInstance { get; init; }
+    public ConcurrentDictionary<string, DockerInstance> Instance { get; init; }
     public Task Add(DockerInstance instance);
     public Task Add(DockerImageType imageType, DockerInstance? instance = null);
     public Task RemoveInstance(string id);
@@ -20,24 +20,39 @@ public interface IInfrastructure
 /// <summary>
 ///
 /// </summary>
-/// <param name="Id"></param>
-/// <param name="Name"></param>
+/// <param name="Id">Docker Container Id</param>
+/// <param name="Name">Docker Container Name</param>
 /// <param name="Ports"></param>
 /// <param name="HttpPortMappingWithRelativeSourceMapping">
 /// Mapping of HTTP ports to their relative source paths for testing
 /// </param>
 /// <param name="Status"></param>
 /// <param name="EnvironmentVariables"></param>
-public record DockerInstance(
-    string Id,
-    string Name,
-    Dictionary<ushort, ushort> Ports,
-    Dictionary<ushort, string> HttpPortMappingWithRelativeSourceMapping,
-    DockerContainerStatus Status,
-    List<KeyValuePair<string, string>> EnvironmentVariables
-);
+public class DockerInstance
+{
+    public DockerInstance(
+        DockerImageType imageType,
+        string? id = null,
+        string? name = null,
+        string? dns = null
+    )
+    {
+        Id = id ?? Guid.NewGuid().ToString("N");
+        Name = name ?? imageType.ToString() + "-" + Guid.NewGuid().ToString("N");
+        Dns = dns ?? Name;
+    }
 
-public enum DockerContainerStatus
+    public string Id { get; init; }
+    public string Name { get; init; }
+    public string Dns { get; init; }
+    public DockerImageType ImageType { get; init; }
+    public IDictionary<ushort, ushort>? AssignedPorts { get; }
+    public IDictionary<ushort, string>? HttpPortMappingWithRelativeSourceMapping { get; }
+    public InstanceStatus Status { get; set; } = InstanceStatus.Undefined;
+    public List<KeyValuePair<string, string>>? EnvironmentVariables { get; set; }
+}
+
+public enum InstanceStatus
 {
     Undefined,
     Created,
@@ -110,15 +125,6 @@ public static class DockerDefaultPorts
             )
             // Build the container configuration.
             .Build();
-
-        var sc = new DockerInstance(
-            "",
-            "",
-            new Dictionary<ushort, ushort>(),
-            [],
-            DockerContainerStatus.Undefined,
-            []
-        );
 
         await container.StartAsync();
 
