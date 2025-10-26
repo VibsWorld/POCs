@@ -9,6 +9,7 @@ namespace DockerAsInfrastructure.Test.Integration
         {
             var infra = new DockerInfrastructure();
             var result = await infra.IsTcpPortInUse(5432);
+            var port = await infra.GetNextAvailablePort(5432);
         }
     }
 }

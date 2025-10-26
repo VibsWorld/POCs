@@ -8,5 +8,6 @@ public interface IInfrastructure
     public Task Add(DockerInstance instance);
     public Task Add(DockerImageType imageType, DockerInstance? instance = null);
     public Task Remove(string id);
-    public Task<(bool inUse, ushort? nextAvailablePort)> IsTcpPortInUse(ushort port);
+    public Task<bool> IsTcpPortInUse(ushort port);
+    public Task<ushort> GetNextAvailablePort(ushort startingPort = 60000);
 }
