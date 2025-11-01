@@ -114,7 +114,7 @@ Ref: [https://jeremydmiller.com/2024/08/29/why-and-how-marten-is-a-great-documen
 
 #### Built-in Event Sourcing Engine	
 Ref: <https://martendb.io/tutorials/event-sourced-aggregate.html>
-For applications designed with an Event Sourcing architecture, Marten is alredy an established and unparalleled choice. Most devs know about Marten only as an open source event sourcinng engine. In addition of performing role of a document database. **it's also a full-featured event store**. Saving data means appending events to a stream, which Marten handles natively.
+For applications designed with an Event Sourcing architecture, Marten is already an established and unparalleled choice. Most devs know about Marten only as an open source event sourcinng engine. Saving data means appending events to a stream, making on-demand and normal projections which Marten handles natively.
 
 With Marten:  
 Saving a series of events is a first-class operation.
@@ -130,7 +130,7 @@ var userNameUpdated = new UserNameUpdated(userId, "Test User");
 session.Events.Append(userId, userRegistered, userNameUpdated);
 await session.SaveChangesAsync();
 ```
-Using Live Single Stream Projection and `Event Appliers` at go
+Using Single Stream Projection and `Event Appliers` at go
 ```csharp
 public class UserDashboardViewProjection : SingleStreamProjection<UserDashboardStats, Guid>
 {
