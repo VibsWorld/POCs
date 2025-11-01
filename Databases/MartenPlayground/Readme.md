@@ -2,13 +2,13 @@ Proposal - Using **Marten ORM framework** to leverage benefits of [Postgres JSON
 
 * [Marten Vs Other ORMs](Readme.md#marten-vs-other-orms)
   * [Unit of Work and Automatic Change Tracking](Readme.md#unit-of-work-and-automatic-change-tracking)
-  * [Seamless Document-Based Persistence - Impedence Mismatch Resolution](Readme.md#seamless-document-based-persistence)
+  * [Seamless Document-Based Persistence - Object Relational Impedence Mismatch Resolution](Readme.md#seamless-document-based-persistence)
   * [Automatic Schema Management and Evolution](Readme.md#automatic-schema-management-and-evolution)
   * [Built-in Event Sourcing Engine](Readme.md#built-in-event-sourcing-engine)
   * [Simplified "Upsert" and Bulk Insert Operations](Readme.md#simplified-upsert-and-bulk-insert-operations)
   * [Tracking and Logging](Readme.md#tracking-and-logging)
-* [Optimizing JSONB GET operations](Readme.md#optimizing-jsonb-get-operations)
-* [Architecture Overview](Readme.md#architecture-overview)  
+* [Optimizing JSONB GET operations](optimizing-get-queries-in-jsonb.md)
+* [Architecture Overview](Readme.md#architecture-overview)
 
 Site link - [https://martendb.io/](https://martendb.io/) 
 Nuget Package Info - [https://www.nuget.org/packages/Marten/](https://www.nuget.org/packages/Marten/)
