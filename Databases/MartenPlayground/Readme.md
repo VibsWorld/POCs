@@ -2,7 +2,7 @@
 
 * [Marten Vs Other ORMs](Readme.md#marten-vs-other-orms)
   * [Unit of Work and Automatic Change Tracking](Readme.md#unit-of-work-and-automatic-change-tracking)
-  * [Seamless Document-Based Persistence](Readme.md#seamless-document-based-persistence)
+  * [Seamless Document-Based Persistence - Impedence Mismatch Resolution](Readme.md#seamless-document-based-persistence)
   * [Automatic Schema Management and Evolution](Readme.md#automatic-schema-management-and-evolution)
   * [Built-in Event Sourcing Engine](Readme.md#built-in-event-sourcing-engine)
   * [Simplified "Upsert" and Bulk Insert Operations](Readme.md#simplified-upsert-and-bulk-insert-operations)
@@ -54,8 +54,6 @@ Marten uses PostgreSQL's `INSERT ... ON CONFLICT DO UPDATE` under the hood to pe
 
 We use a session (`LightweightSession`) to interact with the database. *This pattern is similar to an EF Core DbContext or a NHibernate session*. The session is a unit of work; we save changes at the end (which wraps everything in a DB transaction).Calling `Store`(user) tells Marten to stage that document for saving. `SaveChangesAsync()` actually **commits** it to PostgreSQL.
 
-However, one **drawback** of the document-only approach is that we lose the historical changes. Each update overwrites the previous state. If we later want to know when a shipment was picked up or delivered, we have those timestamps, but what if we need more detail or want an audit trail? We might log or archive old versions, but that gets complex. ***This is where [event sourcing comes in](https://martendb.io/tutorials/evolve-to-event-sourcing.html)***. Instead of just storing the final state, we capture each state change as an event.
-
 **Example 2** *(More Advanced that involves to and fro operation)*
 ```csharp
 var customer = new Customer
@@ -67,6 +65,10 @@ var customer = new Customer
      
     // Marten has "upsert", insert, and update semantics
     session.Insert(customer);
+    await session.SaveChangesAsync();
+
+    //Id Gets populated 
+    Console.WriteLine($"New Customer created with User Id - {customer.Id}");
      
     // Partial updates to a range of Customer documents
     // by a LINQ filter
@@ -92,6 +94,9 @@ await connection.ExecuteAsync(
     new { Data = user, Id = userId } // Assumes the 'user' object can be serialized to JSON
 );
 ```
+
+However, one **drawback** of the document-only approach is that we lose the historical changes. Each update overwrites the previous state. If we later want to know when a shipment was picked up or delivered, we have those timestamps, but what if we need more detail or want an audit trail? We might log or archive old versions, but that gets complex. This is where event sourcing comes in <https://martendb.io/tutorials/evolve-to-event-sourcing.html>. Refer [Built-in Event Sourcing Engine](Readme.md#built-in-event-sourcing-engine) and Check `UserDashboardAggregateView.cs` in the project Instead of just storing the final state, we capture each state change as an event.
+
 #### Seamless Document-Based Persistence
 
 Marten leverages PostgreSQL's powerful `JSONB` capabilities to store your C\# objects as documents. **This eliminates the** **`object-relational impedance mismatch`**, meaning you don't have to flatten complex objects into a relational table structure. You can save rich, nested objects directly.
@@ -102,14 +107,14 @@ Advantage: You work with your domain objects naturally without writing mapping c
 We’ll discuss Indexation and GET performance related issues and their resolutions later in the document.  
 
 #### Automatic Schema Management and Evolution
-Marten can manage your database schema for you. Based on your C\# classes, **it can automatically create the necessary tables, functions, and indexes on the fly** *(at the same it gives you control over Data Annotations like we had in Entity Framework to change some properties like changing name of Identity column)*. As your classes evolve (e.g., you add a new property), Marten can automatically update the database schema to reflect those changes.  
+Marten can manage your database schema for you. Based on your C\# classes, **it can automatically creates / updates the necessary tables regularly, functions, and indexes on the fly** *(at the same it gives you control over Data Annotations like we had in Entity Framework to change some properties like changing name of Identity column)*. As your classes evolve (e.g., you add a new property), Marten can automatically update the database schema to reflect those changes. In addition to that Marten also records the object version number to ensure that the object past state references remain consistent and backwards compatability is maintained.   
 Ref: [https://jeremydmiller.com/2024/08/29/why-and-how-marten-is-a-great-document-database](https://jeremydmiller.com/2024/08/29/why-and-how-marten-is-a-great-document-database) 
 
 **Advantage**: This dramatically speeds up development and simplifies migrations. With Dapper, schema management is entirely manual. You must write and maintain all the Data Definition Language (DDL) scripts (CREATE TABLE, ALTER TABLE, etc.) yourself.
 
 #### Built-in Event Sourcing Engine	
 Ref: <https://martendb.io/tutorials/event-sourced-aggregate.html>
-For applications designed with an Event Sourcing architecture, Marten is an unparalleled choice. It's not just a document database library; **it's also a full-featured event store**. Saving data means appending events to a stream, which Marten handles natively.
+For applications designed with an Event Sourcing architecture, Marten is alredy an established and unparalleled choice. Most devs know about Marten only as an event sourcinng engine which is open source. It's not just a document database library; **it's also a full-featured event store**. Saving data means appending events to a stream, which Marten handles natively.
 
 With Marten:  
 Saving a series of events is a first-class operation.
@@ -124,6 +129,27 @@ var userNameUpdated = new UserNameUpdated(userId, "Test User");
 // Appending events is the primary way of saving state
 session.Events.Append(userId, userRegistered, userNameUpdated);
 await session.SaveChangesAsync();
+```
+Using Live Single Stream Projection and `Event Appliers` at go
+```csharp
+public class UserDashboardViewProjection : SingleStreamProjection<UserDashboardStats, Guid>
+{
+    public UserDashboardStats Create(UserCreated @event) =>
+        new()
+        {
+            Id = @event.UserId,
+            Name = @event.Name,
+            Email = @event.Email,
+        };
+
+     public void Apply(UserDashboardStats view, UserAddressDetailsModified @event) =>
+        view.TotalTimesAddressModified++;
+
+    public void Apply(UserDashboardStats view, UserRolesAdded @event) =>
+        view.TotalTimesUserRolesModified++;
+
+... more such event continues
+}
 ```
 Advantage: With Dapper, you would have to build the entire event sourcing infrastructure from the ground up—designing tables for event streams, managing concurrency, and handling event serialization. **This is a massive undertaking that Marten provides out of the box**.
 
