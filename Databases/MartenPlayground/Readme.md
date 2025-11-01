@@ -112,6 +112,7 @@ Ref: [https://jeremydmiller.com/2024/08/29/why-and-how-marten-is-a-great-documen
 
 **Advantage**: This dramatically speeds up development and simplifies migrations. With Dapper, schema management is entirely manual. You must write and maintain all the Data Definition Language (DDL) scripts (CREATE TABLE, ALTER TABLE, etc.) yourself.
 
+---
 #### Built-in Event Sourcing Engine	
 Ref: <https://martendb.io/tutorials/event-sourced-aggregate.html>
 For applications designed with an Event Sourcing architecture, Marten is already an established and unparalleled choice. Most devs know about Marten only as an open source event sourcinng engine. Saving data means appending events to a stream, making on-demand and normal projections which Marten handles natively.
