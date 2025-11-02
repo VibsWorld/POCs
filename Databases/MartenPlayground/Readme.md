@@ -53,7 +53,7 @@ await session.SaveCHangesAsync();
 ```
 `Marten` uses PostgreSQL's `INSERT ... ON CONFLICT DO UPDATE` under the hood to perform upsert i.e if you provide `user.Id` then its an `Update` else an `Insert`. There is a separate `Insert` method which ensures that operation is succcessful only if a new row is created.
 
-We mostly use a session [LightweightSession](https://Readme.md#architecture-overview) to interact with the database. *This pattern is similar to an EF Core DbContext or a NHibernate session*. The session is a unit of work; we save changes at the end (which wraps everything in a DB transaction). Calling `Store` (user) tells Marten to stage that document for saving. `SaveChangesAsync()` actually **commits** it to PostgreSQL.
+We mostly use a session [LightweightSession](Readme.md#architecture-overview) to interact with the database. *This pattern is similar to an EF Core DbContext or a NHibernate session*. The session is a unit of work; we save changes at the end (which wraps everything in a DB transaction). Calling `Store` (user) tells Marten to stage that document for saving. `SaveChangesAsync()` actually **commits** it to PostgreSQL.
 
 **Example 2** *(More Advanced that involves to and fro operation)*
 ```csharp
