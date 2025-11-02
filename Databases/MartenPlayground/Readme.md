@@ -9,6 +9,7 @@ Proposal - Using **Marten ORM framework** to leverage benefits of [Postgres JSON
   * [Tracking and Logging](Readme.md#tracking-and-logging)
 * [Optimizing JSONB GET operations](optimizing-get-queries-in-jsonb.md)
 * [Architecture Overview](Readme.md#architecture-overview)
+* [Eventstore vs Marten Basic Comparision](Readme.md#eventstore-vs-marten)
 
 Site link - [https://martendb.io/](https://martendb.io/) 
 Nuget Package Info - [https://www.nuget.org/packages/Marten/](https://www.nuget.org/packages/Marten/)
@@ -16,21 +17,21 @@ Nuget Package Info - [https://www.nuget.org/packages/Marten/](https://www.nuget.
 Sample Repository for POC   
 [https://github.com/VibsWorld/POCs/tree/main/Databases/MartenPlayground](https://github.com/VibsWorld/POCs/tree/main/Databases/MartenPlayground) 
 
-A wonderful way to get start via Freight Shipping Service (Tutorial from author's site) - [https://martendb.io/tutorials/getting-started.html](https://martendb.io/tutorials/getting-started.html) 
+A wonderful way to get start via Freight Shipping Service (Tutorial from author's site) - [https://martendb.io/tutorials/getting-started.html](https://martendb.io/tutorials/getting-started.html)
 
 ---
 ### Marten Vs Other ORMs
 When saving data in a .NET application using PostgreSQL, `Marten` offers several significant advantages over `Dapper` by providing a higher level of abstraction and **embracing a document database approach** which relates more closely with `Domain Driven Design`. 
 
-While Dapper excels at high-performance querying and giving developers **direct SQL control**, Marten simplifies the act of data persistence, reducing boilerplate code and development overhead.
+While `Dapper` excels at high-performance querying and giving developers **direct SQL control**, `Marten` simplifies the act of data persistence, reducing boilerplate code and development overhead.
 
-**Main Advantages over Dapper** *(Not discussing here ENTITY Framework pros/cons intentionally as I have already decided to use Dapper over EF for now)*
+Note: *(Not discussing here ENTITY Framework pros/cons intentionally as I have already decided to use Dapper over EF for now)*
 
 ---
 #### Unit of Work and Automatic Change Tracking
-Marten's `IDocumentSession` implements the `Unit of Work` pattern, which is one of its most powerful features for data persistence. It automatically tracks changes to your C\# objects, figures out what needs to be inserted or updated, and batches all operations into a single transaction when you call `SaveChangesAsync()`  
+`Marten's` `IDocumentSession` implements the `Unit of Work` pattern, which is one of its most powerful features for data persistence. It automatically tracks changes to your C\# objects, figures out what needs to be inserted or updated, and batches all operations into a single transaction when you call `SaveChangesAsync()`  
 **Ref:** [https://www.codemag.com/Article/2205051/Fast-Application-Persistence-with-Marten](https://www.codemag.com/Article/2205051/Fast-Application-Persistence-with-Marten)   
-With Marten:  
+With `Marten`:  
 You simply load an object, modify it, and tell the session to save the changes. Marten handles the rest.
 
 **Example 1**
@@ -50,9 +51,9 @@ user.Shipment.Status = "Pickup Up";
 session.store(user);
 await session.SaveCHangesAsync();
 ```
-Marten uses PostgreSQL's `INSERT ... ON CONFLICT DO UPDATE` under the hood to perform upsert i.e if you provide user**.**Id then its an `Update` else an `Insert`. 
+`Marten` uses PostgreSQL's `INSERT ... ON CONFLICT DO UPDATE` under the hood to perform upsert i.e if you provide `user.Id` then its an `Update` else an `Insert`. There is a separate `Insert` method which ensures that operation is succcessful only if a new row is created.
 
-We use a session (`LightweightSession`) to interact with the database. *This pattern is similar to an EF Core DbContext or a NHibernate session*. The session is a unit of work; we save changes at the end (which wraps everything in a DB transaction).Calling `Store`(user) tells Marten to stage that document for saving. `SaveChangesAsync()` actually **commits** it to PostgreSQL.
+We mostly use a session [LightweightSession](https://Readme.md#architecture-overview) to interact with the database. *This pattern is similar to an EF Core DbContext or a NHibernate session*. The session is a unit of work; we save changes at the end (which wraps everything in a DB transaction). Calling `Store` (user) tells Marten to stage that document for saving. `SaveChangesAsync()` actually **commits** it to PostgreSQL.
 
 **Example 2** *(More Advanced that involves to and fro operation)*
 ```csharp
@@ -63,7 +64,7 @@ var customer = new Customer
         Class = "first"
     };
      
-    // Marten has "upsert", insert, and update semantics
+    // Marten has option of exclusive upsert, insert and update semantics via different methods
     session.Insert(customer);
     await session.SaveChangesAsync();
 
@@ -75,14 +76,12 @@ var customer = new Customer
     session.Patch<Customer>(x => x.Region == "EMEA")
         .Set(x => x.Class, "First");
  
-    // Both the above operations happen in different 
-    // ACID transaction
+    // Both the above operations happen in different ACID transactions    
     await session.SaveChangesAsync();
 ```
 **With Dapper:**  
 You are responsible for everything. You must manually write the UPDATE SQL statement, create a database connection, and execute the command. This requires more code and is more prone to error if you forget to update a field in your SQL string.
-
-For example
+Dapper example:
 ```csharp
 // Assumes 'connection' is an IDbConnection
 var user = await connection.QuerySingleAsync<User>("SELECT data FROM users WHERE id = @Id", new { Id = userId });
@@ -94,11 +93,11 @@ await connection.ExecuteAsync(
     new { Data = user, Id = userId } // Assumes the 'user' object can be serialized to JSON
 );
 ```
-However, one **drawback** of the a typical document-only approach (e.g MongoDb, NoSql etc) is that we lose the historical changes. Each update overwrites the previous state. If we later want to know when a shipment was picked up or delivered, we have those timestamps, but what if we need more detail or want an audit trail? We might log or archive old versions, but that gets complex. This is where event sourcing comes in <https://martendb.io/tutorials/evolve-to-event-sourcing.html>. Refer [Built-in Event Sourcing Engine](Readme.md#built-in-event-sourcing-engine) and Check `UserDashboardAggregateView.cs` in the project Instead of just storing the final state, we capture each state change as an event.
+**Note:** One **drawback** of the a typical document-only approach (e.g MongoDb, NoSql etc) is that we lose the historical changes. Each update overwrites the previous state. If we later want to know when a shipment was picked up or delivered, we have those timestamps, but what if we need more detail or want an audit trail? We might log or archive old versions, but that gets complex. This is where event sourcing comes in <https://martendb.io/tutorials/evolve-to-event-sourcing.html>. Refer [Built-in Event Sourcing Engine](Readme.md#built-in-event-sourcing-engine) and Check `UserDashboardAggregateView.cs` in the project instead of just storing the final state, we capture each state change as an event.
 
 ---
 #### Seamless Document-Based Persistence
-Marten leverages PostgreSQL's powerful `JSONB` capabilities to store your C\# objects as documents. **This eliminates the** **`object-relational impedance mismatch`**, meaning you don't have to flatten complex objects into a relational table structure. You can save rich, nested objects directly.
+`Marten` leverages PostgreSQL's powerful `JSONB` capabilities to store your C# objects as documents. This eliminates the `object-relational impedance mismatch`, meaning you don't have to flatten complex objects into a relational table structure. You can save rich, nested objects directly with object structure version change log tagged by `Marten` internally.
 
 Advantage: You work with your domain objects naturally without writing mapping code. Dapper, while it can work with JSON, is fundamentally designed for a relational world, requiring you to manage the serialization and mapping between your objects and table columns yourself.
 
@@ -107,7 +106,7 @@ Indexation and GET performance related issues for nested JSON data and their eas
 
 ---
 #### Automatic Schema Management and Evolution
-Marten can manage your database schema for you. Based on your C\# classes, **it can automatically** (it can be disabled for prod if org want to handle migrations manually) ** creates / updates the necessary tables regularly, functions, and indexes on the fly** *(at the same it gives you control over Data Annotations like we had in Entity Framework to change some properties like changing name of Identity column)*. As your classes evolve (e.g. you add a new field/property), Marten can automatically update the database schema to reflect those changes. In addition to that Marten also records the object version number to ensure that the object past state references remain consistent and backwards compatability is maintained.   
+Marten can manage your database schema for you. Based on your C# classes, it can **automatically**  (*can be disabled for prod via conf*) create / update the necessary tables regularly, functions, and indexes on the fly. At the same it gives you control via Attributes (Data Annotations) like we had in Entity Framework to change some properties like changing name of Identity column. As your classes evolve (e.g. you add a new field/property), Marten can automatically update the database schema to reflect those changes. In addition to that Marten also records the object version number to ensure that the object past state references remain consistent and backwards compatability is maintained. *Note:* Automatic Schema changes can be disabled on prod if business intend to use database migrations to update schema.    
 Ref: [https://jeremydmiller.com/2024/08/29/why-and-how-marten-is-a-great-document-database](https://jeremydmiller.com/2024/08/29/why-and-how-marten-is-a-great-document-database) 
 
 **Advantage**: This dramatically speeds up development and simplifies migrations. With Dapper, schema management is entirely manual. You must write and maintain all the Data Definition Language (DDL) scripts (CREATE TABLE, ALTER TABLE, etc.) yourself.
@@ -115,7 +114,7 @@ Ref: [https://jeremydmiller.com/2024/08/29/why-and-how-marten-is-a-great-documen
 ---
 #### Built-in Event Sourcing Engine	
 Ref: <https://martendb.io/tutorials/event-sourced-aggregate.html>
-For applications designed with an Event Sourcing architecture, Marten is already an established and unparalleled choice. Most devs know about Marten only as an open source event sourcinng engine. Saving data means appending events to a stream, making on-demand and normal projections which Marten handles natively.
+For applications designed with an Event Sourcing architecture, `Marten` is already an established and unparalleled choice. Most devs know about Marten only as an open source event sourcinng engine. Saving data means appending events to a stream, making on-demand and normal projections which Marten handles natively.
 
 With Marten:  
 Saving a series of events is a first-class operation.
@@ -157,7 +156,7 @@ Advantage: With Dapper, you would have to build the entire event sourcing infras
 Ref: [https://falberthen.github.io/posts/ecommerceddd-pt4/](https://falberthen.github.io/posts/ecommerceddd-pt4/) 
 
 ---
-#### Simplified "Upsert" and Bulk Insert Operations
+#### Simplified "Upsert" and "Bulk Insert" Operations
 Marten's `Store()` method conveniently handles both `INSERT` and `UPDATE` operations "**upsert**". It checks if a document with the given ID exists and performs the correct database command. Dapper requires you to write logic to differentiate between new and existing records.  
 Ref: [https://martendb.io/documents/storing\#upsert-with-store](https://martendb.io/documents/storing#upsert-with-store) 
 
@@ -202,4 +201,12 @@ If you registered Marten with `AddMarten()` under `ServiceCollection`, the `IDoc
   * **DirtyCheckingDocumentSession**  
     * This is the dirty checking documentation. Session will try to detect the changes to any of the documents loaded by that session. Note by note comparison of json session od document using newtonsoft and system.text.json library.
 ---
+### Eventstore Vs Marten
 
+| Marten (with Postgres) | Eventstore |
+| ----- | ----- |
+| No user interface available. Business can either develop their own UI for browsing the events or have to rely heavily on native SQL get queries | Best Event sourcing User Interface available |
+| Data Harvesting using nested JSONB Queries possible. It opens vast possibilities to cross link various tables and even databases to reporting | Cross link data is not available via UI as the learning curve is not easy.  Eventstore data cannot be INNER JOINED with other databases / tables as SQL cannot be applied. |
+| Supports combination of NO SQL Document databases along with ACID compliance for RDBMS ecosystem. However it depends on use case to use scenario | Useful only for event sourcing bounded contexts. In addition to that eventstore runs on its own infrastructure so one more instance is required to maintain at scalability level.  |
+
+---
